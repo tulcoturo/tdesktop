@@ -125,10 +125,22 @@ jobs:
           key: ${{ runner.OS }}-arm64-qt6-${{ env.CACHE_KEY }}
           restore-keys: ${{ runner.OS }}-arm64-qt6-
 
+      - name: Patch prepare.py (dav1d VS2026 fix).
+        shell: pwsh
+        run: |
+          $f = Join-Path $env:TBUILD "$env:REPO_NAME\$env:PREPARE_PATH"
+          $c = Get-Content $f -Raw
+          $anchor = 'git revert --no-edit d503bb0ccaf104b2f13da0f092e09cc9411b3297'
+          $fix = "powershell -NoProfile -Command `"`$h='include\compat\msvc\stdatomic.h'; (Get-Content `$h -Raw).Replace('__has_include_next(<stdatomic.h>)','0') | Set-Content `$h`""
+          if (-not $c.Contains($anchor)) { Write-Error 'anchor not found'; exit 1 }
+          $c = $c.Replace($anchor, "$anchor`n    $fix")
+          Set-Content $f $c -NoNewline
+          Select-String -Path $f -Pattern 'stdatomic' | % { $_.Line }
+
       - name: Build libraries and dependencies.
         run: |
           set CARGO_INCREMENTAL=0
-          %TBUILD%\%REPO_NAME%\Telegram\build\prepare\win.bat skip-release silent qt6
+          %TBUILD%\%REPO_NAME%\Telegram\build\prepare\win.bat silent qt6
 
       - name: Free up some disk space.
         shell: bash
