@@ -131,7 +131,7 @@ jobs:
           $f = Join-Path $env:TBUILD "$env:REPO_NAME\$env:PREPARE_PATH"
           $c = Get-Content $f -Raw
           $anchor = 'git revert --no-edit d503bb0ccaf104b2f13da0f092e09cc9411b3297'
-          $fix = "powershell -NoProfile -Command `"`$h='include\compat\msvc\stdatomic.h'; (Get-Content `$h -Raw).Replace('__has_include_next(<stdatomic.h>)','0') | Set-Content `$h`""
+          $fix = 'python -c "p = ''include/compat/msvc/stdatomic.h''; c = open(p).read().replace(''__has_include_next(<stdatomic.h>)'', ''0''); open(p, ''w'').write(c)"'
           if (-not $c.Contains($anchor)) { Write-Error 'anchor not found'; exit 1 }
           $c = $c.Replace($anchor, "$anchor`n    $fix")
           Set-Content $f $c -NoNewline
